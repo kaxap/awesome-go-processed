@@ -88,6 +88,7 @@ class ReadMeProcessor:
                 result.append('|stars|forks|issues|description|')
                 result.append('| --- | --- | --- | --- |')
                 result.extend(sorted([el.result() for el in results], reverse=True))
+                result.append(line)
                 buffer.clear()
 
             else:
