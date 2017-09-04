@@ -37,7 +37,7 @@ class RepoItem:
             raise Exception('Invalid Parameter')
 
     def __repr__(self) -> str:
-        return '**{: 6d}**, *{: 6d}*, {: 6d} {}'.format(self.n_stars, self.n_forks, self.n_issues, self.text)
+        return '|{}|{}|{}|{}|'.format(self.n_stars, self.n_forks, self.n_issues, self.text)
 
 
 class ReadMeProcessor:
@@ -85,6 +85,8 @@ class ReadMeProcessor:
             if line.startswith('##') and len(buffer):
                 # new section
                 results, _ = await asyncio.wait(buffer)
+                result.append('|stars|forks|issues|description|')
+                result.append('| --- | --- | --- | --- |')
                 result.extend(sorted([el.result() for el in results], reverse=True))
                 buffer.clear()
 
