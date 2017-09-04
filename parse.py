@@ -42,7 +42,7 @@ def add_stats(readme: str) -> str:
         if repo:
             stats = get_github_stats(repo)
             line += \
-                f' -> _stars: {stats.get(KEY_STARS)}, forks: {stats.get(KEY_FORKS)}, open issues:{stats.get(KEY_ISSUES)}_'
+                f' -> _stars: *{stats.get(KEY_STARS)}*, forks: {stats.get(KEY_FORKS)}, open issues:{stats.get(KEY_ISSUES)}_'
         result.append(line)
         i += 1
         print(f'{i}/{total} complete')
