@@ -101,7 +101,7 @@ class ReadMeProcessor:
             i += 1
             print(f'{i}/{total} complete')
 
-        return "\n".join([e.__repr__() for e in result])
+        return "\n".join([str(e) for e in result])
 
     async def process(self) -> None:
         try:
