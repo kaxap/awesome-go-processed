@@ -8,6 +8,7 @@ from functools import total_ordering
 
 from http_session_pool import RealWorldSessions
 from proxy_provider import KDProxyProvider
+import datetime
 
 RE_LINK = re.compile(r'\* \[.*?\]\(https://github\.com/(.*?)\) - .*')
 KEY_STARS = 'watchers_count'
@@ -111,8 +112,9 @@ class ReadMeProcessor:
             print('processing...')
             readme: str = self._get_readme()
             processed: str = await self._add_stats(readme)
+            today = datetime.datetime.now().strftime("%Y-%m-%d")
             with open('README.md', 'w', encoding='utf-8') as f:
-                f.write(f'this is a processed copy of {readme_url}\n\n')
+                f.write(f'This is a processed copy of {readme_url}. Updated {today}\n\n')
                 f.write(processed)
 
         finally:
