@@ -9,11 +9,13 @@ from functools import total_ordering
 from http_session_pool import RealWorldSessions
 from proxy_provider import KDProxyProvider
 import datetime
+import humanize
 
 RE_LINK = re.compile(r'\* \[.*?\]\(https://github\.com/(.*?)\) - .*')
 KEY_STARS = 'watchers_count'
 KEY_FORKS = 'forks_count'
 KEY_ISSUES = 'open_issues'
+KEY_UPDATED_AT = 'updated_at'
 
 
 @total_ordering
@@ -23,11 +25,17 @@ class RepoItem:
     n_stars: int
     n_forks: int
     n_issues: int
+    str_last_update: datetime.datetime
 
     def __init__(self, text: str, repository: str, stats: dict) -> None:
         self.n_forks = stats.get(KEY_FORKS, 0)
         self.n_stars = stats.get(KEY_STARS, 0)
         self.n_issues = stats.get(KEY_ISSUES, 0)
+        last_update = stats.get(KEY_UPDATED_AT, None)
+        if last_update:
+            self.str_last_update = humanize.naturaltime(datetime.datetime.now() - datetime.datetime.strptime(last_update, "%Y-%m-%dT%H:%M:%SZ"))
+        else:
+            self.str_last_update = "Unknown"
         self.text = text
         self.repository = repository
 
@@ -38,7 +46,7 @@ class RepoItem:
             raise Exception('Invalid Parameter')
 
     def __repr__(self) -> str:
-        return '|{}|{}|{}|{}|'.format(self.n_stars, self.n_forks, self.n_issues, self.text)
+        return '|{}|{}|{}|{}|{}|'.format(self.n_stars, self.n_forks, self.n_issues, self.str_last_update, self.text)
 
 
 class ReadMeProcessor:
@@ -86,8 +94,8 @@ class ReadMeProcessor:
             if line.startswith('##') and len(buffer):
                 # new section
                 results, _ = await asyncio.wait(buffer)
-                result.append('|stars|forks|issues|description|')
-                result.append('| --- | --- | --- | --- |')
+                result.append('|stars|forks|issues|updated|description|')
+                result.append('| --- | --- | --- | --- | --- |')
                 result.extend(sorted([el.result() for el in results], reverse=True))
                 result.append(line)
                 buffer.clear()
