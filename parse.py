@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 import asyncio
 import requests
@@ -10,13 +10,14 @@ from http_session_pool import RealWorldSessions
 from proxy_provider import KDProxyProvider
 import datetime
 import humanize
+from last_commit import get_last_commit_date
 
 RE_LINK = re.compile(r'\* \[.*?\]\(https://github\.com/(.*?)\) - .*')
 KEY_STARS = 'watchers_count'
 KEY_FORKS = 'forks_count'
 KEY_ISSUES = 'open_issues'
 KEY_UPDATED_AT = 'updated_at'
-
+KEY_LAST_COMMIT = 'last_commit'
 
 @total_ordering
 class RepoItem:
@@ -31,13 +32,9 @@ class RepoItem:
         self.n_forks = stats.get(KEY_FORKS, 0)
         self.n_stars = stats.get(KEY_STARS, 0)
         self.n_issues = stats.get(KEY_ISSUES, 0)
-        last_update = stats.get(KEY_UPDATED_AT, None)
-        if last_update:
-            self.str_last_update = humanize.naturaltime(datetime.datetime.now() - datetime.datetime.strptime(last_update, "%Y-%m-%dT%H:%M:%SZ"))
-        else:
-            self.str_last_update = "Unknown"
         self.text = text
         self.repository = repository
+        self.str_last_update = stats.get(KEY_LAST_COMMIT, "Unknown")
 
     def __lt__(self, other):
         if isinstance(other, RepoItem):
@@ -73,6 +70,13 @@ class ReadMeProcessor:
     async def _get_github_repo(self, text: str, repo: str) -> RepoItem:
         stats: dict = await self.loop.run_in_executor(None, self._get_json,
                                                       f'https://api.github.com/repos/{repo}')
+
+        last_commit: Optional[str] = await self.loop.run_in_executor(None, get_last_commit_date, repo)
+        if last_commit:
+            stats[KEY_LAST_COMMIT] = humanize.naturaltime(datetime.datetime.now() - datetime.datetime.strptime(last_commit, "%Y-%m-%dT%H:%M:%SZ"))
+        else:
+            stats[KEY_LAST_COMMIT] = "Unknown"
+
         return RepoItem(text, repo, stats)
 
     def _get_repo(self, line: str) -> str:
@@ -94,7 +98,7 @@ class ReadMeProcessor:
             if line.startswith('##') and len(buffer):
                 # new section
                 results, _ = await asyncio.wait(buffer)
-                result.append('|stars|forks|issues|updated|description|')
+                result.append('|stars|forks|issues|last_commit|description|')
                 result.append('| --- | --- | --- | --- | --- |')
                 result.extend(sorted([el.result() for el in results], reverse=True))
                 result.append(line)
